@@ -26,8 +26,12 @@ ax.set(xlabel='Edad',ylabel='Tarifa',
 plt.savefig('correlacion de edad y tarifa')
 
 # 2
-# plt.figure()
+plt.figure()
 ax = sns.countplot(x="class", hue="sex", data=df_titanic,palette="Set2")
 ax.set(xlabel='Clase',ylabel='Cantidad',
        title='Cantidad de pasajeros por clase discriminados por sexo')
 plt.savefig('cantidad de pasajeros por clase discriminados por sexo')
+
+# regresiones
+plt.figure()
+sns.regplot(x="age", y="fare", data=df_titanic);

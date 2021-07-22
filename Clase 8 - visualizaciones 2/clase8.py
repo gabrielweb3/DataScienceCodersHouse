@@ -17,7 +17,9 @@ mpl.style.use('bmh')
 # importa datos de lluvias
 df_lluvias = pd.read_csv('pune_1965_to_2002 (1).csv')
 
-fig, ax = plt.subplots(nrows=3,ncols=1,figsize=(12,5),sharex=True,sharey=True)
+fig, ax = plt.subplots(nrows=3,ncols=1,
+                       figsize=(12,5),sharex=True,
+                       sharey=True)
 
 ax[0].plot(df_lluvias.index,df_lluvias['Jan'],label='Precipitaciones Enero')
 ax[1].plot(df_lluvias.index,df_lluvias['Feb'],label='Precipitaciones Febrero',color='C1')
