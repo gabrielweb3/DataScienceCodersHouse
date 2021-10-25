@@ -1,12 +1,15 @@
+# procesamiento de datos
 import pandas as pd
 import numpy as np
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
-from plotly.offline import plot
-import plotly.express as px
-import plotly.figure_factory as ff
+# visualizacion de datos
 import seaborn as sns
 import matplotlib.pyplot as plt
+# clasificaicon de datos
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import precision_score
 
 # definicion de dataframe principal
 ag01 = pd.DataFrame()
@@ -177,6 +180,8 @@ def analisis_multivariado():
 ##############################################################################
 def filtrado_de_datos():
     global ag01, ag01_filtrado
+    
+    ag01_filtrado = ag01.copy(deep=True)
     
     # filtros por norma y caracteristicas de maquina
     
@@ -408,27 +413,21 @@ def filtrado_de_datos():
     
     # clasificacion de datos
     # cambio datos true por 1
-    # ag01['dentro de curva'] = ag01['dentro de curva'].map({ag01['dentro de curva'].unique()[0]:1})
+    ag01['dentro de curva'] = ag01['dentro de curva'].map({ag01['dentro de curva'].unique()[0]:1,ag01['dentro de curva'].unique()[1]:0})
     # y como los datos que no pertenecen a la curva estan marcados con un nan, los cambio por 0
 
-    # filtro de datos consecutivos para valores numericos
-    datos_consecutivos = 3
+    # # filtro de datos consecutivos para valores numericos
+    # datos_consecutivos = 3
     
-    for var in range(1,4):    
+    # for var in range(1,4):    
  
-        # filtro de valores consecutivos
-        # caso de accion "Reemplazar" 
-        filtrados = ag01.groupby((ag01[ag01.columns[var]].shift() != ag01[ag01.columns[var]]).\
-                              cumsum()).filter(lambda x: len(x) >= datos_consecutivos)  
-        # esta linea filtra finalmente los datos convirtiendolos de nueva a df
-        ag01[ag01.columns[var]] = np.where(ag01.index.isin(filtrados.index), np.nan, ag01[ag01.columns[var]][:])
-        
-        # dataframe booleano de datos a filtrar
-        # a_filtrar = datos.index.isin(filtrados.index)
+    #     # filtro de valores consecutivos
+    #     filtrados = ag01.groupby((ag01[ag01.columns[var]].shift() != ag01[ag01.columns[var]]).\
+    #                           cumsum()).filter(lambda x: len(x) >= datos_consecutivos)  
+    #     # esta linea filtra finalmente los datos convirtiendolos de nueva a df
+    #     ag01[ag01.columns[var]] = np.where(ag01.index.isin(filtrados.index), np.nan, ag01[ag01.columns[var]][:])
         
       
-
-
 # visualizacion despues de filtrado
 def visualizacion_de_filtrados():
     global ag01,ag01_filtrado
@@ -438,15 +437,98 @@ def visualizacion_de_filtrados():
                                                  color='g')
     curva_de_potencia_filtrada.set_title('Curva de Potencia (todo el conjunto de datos con filtros)')
     curva_de_potencia_filtrada.set_ylabel('Potencia')
-    curva_de_potencia_filtrada.set_xlabel('Velocidad')                            
+    curva_de_potencia_filtrada.set_xlabel('Velocidad')               
+    curva_de_potencia_filtrada.grid(True)             
     print('Coeficiente de correlacion en curva de potencia sin filtrar')
     print('R2 = 0.686510')
     
-    regresion_lineal = sns.regplot(x=ag01_filtrado[ag01_filtrado.columns[1]],
-                                   y=ag01_filtrado[ag01_filtrado.columns[4]],
-                                   color='g',marker="+")
+    # regresion_lineal = sns.regplot(x=ag01_filtrado[ag01_filtrado.columns[1]],
+    #                                y=ag01_filtrado[ag01_filtrado.columns[4]],
+    #                                color='g',marker="+")
     print('Coeficiente de correlacion de curva de potencia despues de filtrado')
     print('R2 = 0.923241')
+    
+    
+def clasificacion_con_regresion_logistica():
+    global ag01
+    
+    #Seleccionamos todas las columnas
+    X = dataset.data
+    
+    #Defino los datos correspondientes a las etiquetas
+    y = dataset.target
+    
+    ########## IMPLEMENTACIÓN DE REGRESIÓN LOGÍSTICA ##########
+    
+    from sklearn.model_selection import train_test_split
+    
+    #Separo los datos de "train" en entrenamiento y prueba para probar los algoritmos
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    
+    #Se escalan todos los datos
+    from sklearn.preprocessing import StandardScaler
+    escalar = StandardScaler()
+    X_train = escalar.fit_transform(X_train)
+    X_test = escalar.transform(X_test)
+    
+    #Defino el algoritmo a utilizar
+    from sklearn.linear_model import LogisticRegression
+    
+    algoritmo = LogisticRegression()
+    
+    #Entreno el modelo
+    algoritmo.fit(X_train, y_train)
+    
+    #Realizo una predicción
+    y_pred = algoritmo.predict(X_test)
+    
+    #Verifico la matriz de Confusión
+    from sklearn.metrics import confusion_matrix
+    
+    matriz = confusion_matrix(y_test, y_pred)
+    print('Matriz de Confusión:')
+    print(matriz)
+    
+    #Calculo la precisión del modelo
+    from sklearn.metrics import precision_score
+    
+    precision = precision_score(y_test, y_pred)
+    print('Precisión del modelo:')
+    print(precision)
+    
+    #Calculo la exactitud del modelo
+    from sklearn.metrics import accuracy_score
+    
+    exactitud = accuracy_score(y_test, y_pred)
+    print('Exactitud del modelo:')
+    print(exactitud)
+    
+    #Calculo la sensibilidad del modelo
+    from sklearn.metrics import recall_score
+    
+    sensibilidad = recall_score(y_test, y_pred)
+    print('Sensibilidad del modelo:')
+    print(sensibilidad)
+    
+    #Calculo el Puntaje F1 del modelo
+    from sklearn.metrics import f1_score
+    
+    puntajef1 = f1_score(y_test, y_pred)
+    print('Puntaje F1 del modelo:')
+    print(puntajef1)
+    
+    #Calculo la curva ROC - AUC del modelo
+    from sklearn.metrics import roc_auc_score
+    
+    roc_auc = roc_auc_score(y_test, y_pred)
+    print('Curva ROC - AUC del modelo:')
+    print(roc_auc)
+    
+    print('Precisión del modelo:', precision)
+    print('Exactitud del modelo:', exactitud)
+    print('Sensibilidad del modelo:', sensibilidad)
+    print('Puntaje F1 del modelo:', puntajef1)
+    print('Curva ROC - AUC del modelo:', roc_auc)
     
     
 # funcion principal
@@ -454,8 +536,8 @@ def funcion_principal():
     carga_de_datos()
     informacion_y_descripcion()
     limpieza_basica()
-    analisis_univariado()
-    analisis_multivariado()
+    # analisis_univariado()
+    # analisis_multivariado()
     filtrado_de_datos()
     visualizacion_de_filtrados()
 
