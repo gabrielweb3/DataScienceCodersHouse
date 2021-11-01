@@ -174,6 +174,8 @@ def analisis_multivariado():
         print('R2 = 0.686510')
     
     multivariado_potencia_velocidad()
+    
+    analisis_de_componentes_principales()
 
 ##############################################################################
 ###################### DATA CLEANING #########################################
@@ -452,11 +454,14 @@ def visualizacion_de_filtrados():
 def clasificacion_con_regresion_logistica():
     global ag01
     
+    features = [ag01.columns[1],ag01.columns[2],ag01.columns[3],ag01.columns[4],ag01.columns[5]]
+    target = ['dentro de curva']
+    
     #Seleccionamos todas las columnas
-    X = dataset.data
+    X = ag01[features]
     
     #Defino los datos correspondientes a las etiquetas
-    y = dataset.target
+    y = ag01[target]
     
     ########## IMPLEMENTACIÓN DE REGRESIÓN LOGÍSTICA ##########
     
@@ -484,10 +489,26 @@ def clasificacion_con_regresion_logistica():
     
     #Verifico la matriz de Confusión
     from sklearn.metrics import confusion_matrix
+    from sklearn.metrics import plot_confusion_matrix
+    # muestro graficamente matriz de confusion 
+    confusion_matrix(y_test, y_pred)
     
     matriz = confusion_matrix(y_test, y_pred)
     print('Matriz de Confusión:')
     print(matriz)
+    
+    matriz_LR = plot_confusion_matrix(algoritmo, X_test, y_test,
+                                      cmap='cividis')  
+    plt.show()
+    
+    
+    # coeficiente de modelo
+    beta_0 = algoritmo.intercept_ # El beta 0
+    beta_1 = algoritmo.coef_[0][0] # El coeficiente beta_1
+    beta_2 = algoritmo.coef_[0][1] # El coeficiente beta_2
+    print('Beta 0: ',beta_0)
+    print('Beta 1: ',beta_1)
+    print('Beta 2: ',beta_2)
     
     #Calculo la precisión del modelo
     from sklearn.metrics import precision_score
@@ -531,14 +552,109 @@ def clasificacion_con_regresion_logistica():
     print('Curva ROC - AUC del modelo:', roc_auc)
     
     
+def clasificacion_con_knn():
+    from sklearn.metrics import accuracy_score
+    from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import plot_confusion_matrix
+    from sklearn import preprocessing
+    global ag01
+    
+    random_seed = 7
+    # Lista de features que vamos a considerar 
+    features = [ag01.columns[1],ag01.columns[2],ag01.columns[3],ag01.columns[4],ag01.columns[5]]
+    # variable a predecir
+    target = ['dentro de curva']
+    
+    # Construcción de la matriz de features
+    X = ag01[features].to_numpy()
+    # print('Matriz de entradas ',X)
+    # Construcción del vector a predecir
+    y = ag01[target].to_numpy()
+    # print('Vector a predecir: ',y)
+    
+    # Creacion de las matrices de entrenamiento y testeo. 
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, random_state=random_seed)
+    print('Dimensión de la matriz de features para entrenamiento: {}'.format(X_train.shape))
+    print('Dimensión de la matriz de features para testeo: {}'.format(X_test.shape))
+    
+    # Normalizamos en train
+    scaler_train = preprocessing.StandardScaler().fit(X_train)
+    X_train_scaled = scaler_train.transform(X_train)
+    # normalizo el test
+    X_test_scaled = scaler_train.transform(X_test)
+    
+    # probar otros números para k
+    # probar otras distancias, ej: euclidean, minkowski, manhattan 
+    # probar dar mas peso a los vecinos de un orden superior: weights = 'distance'
+    knn = KNeighborsClassifier(n_neighbors=5, metric='euclidean') 
+    knn.fit(X_train_scaled, y_train)
+    
+    y_pred_train = knn.predict(X_train_scaled)
+    accuracy_train =  accuracy_score(y_pred_train, y_train)
+    print('El accuracy en el conjunto de train es', accuracy_train)
+    
+    plot_confusion_matrix(knn, X_test_scaled, y_test)  
+    plt.show()
+
+# analisis de componenetes principales
+def analisis_de_componentes_principales():
+    global ag01
+    
+    # defino x y
+    x = ag01.iloc[:,1:5].values
+    y = ag01.iloc[:,6].values
+    
+    # divido datos en conjuntos de datos de train y test
+    from sklearn.model_selection import train_test_split
+    x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.2,random_state=0)
+    
+    # estandarizacion y escalado
+    from sklearn.preprocessing import StandardScaler
+    sc = StandardScaler()
+    x_train = sc.fit_transform(x_train)
+    y_test = sc.transform(x_test)
+    
+    # aplico PCA
+    from sklearn.decomposition import PCA
+    pca = PCA(n_components=3)
+    x_train = pca.fit_transform(x_train)
+    x_test = pca.transform(x_test)
+    
+    # Explicación de la varianza
+    # Creamos un vector con el porcentaje de influencia de la varianza 
+    # para las dos variables resultantes del conjunto de datos
+    explained_variance = pca.explained_variance_ratio_
+    print('Matriz de varianza: ',explained_variance)
+    
+    # realizo modelo de clasificacion luego de realizado el PCA
+    from sklearn.linear_model import LogisticRegression
+    clasificador = LogisticRegression(random_state=0)
+    clasificador.fit(x_train, y_train)
+    
+    y_pred = clasificador.predict(x_test)
+    
+    # matriz de confusion
+    # from sklearn.metrics import confusion_matrix
+    from sklearn.metrics import plot_confusion_matrix
+    
+    matriz = confusion_matrix(x_test, y_pred)   
+    
+    plot_confusion_matrix(clasificador, x_test, y_pred)
+                           
+    plt.show()
+
 # funcion principal
 def funcion_principal():
     carga_de_datos()
     informacion_y_descripcion()
     limpieza_basica()
-    # analisis_univariado()
+    analisis_univariado()
     # analisis_multivariado()
     filtrado_de_datos()
     visualizacion_de_filtrados()
+    clasificacion_con_regresion_logistica()
+    clasificacion_con_knn()
+    analisis_de_componentes_principales()
 
 funcion_principal()
