@@ -189,10 +189,10 @@ def filtrado_de_datos():
     
     # filtros de velocidad
     ag01_filtrado = ag01[ag01[ag01.columns[1]]>=3.5]
-    ag01_filtrado = ag01_filtrado[ag01_filtrado[ag01_filtrado.columns[1]]<25]
+    ag01_filtrado = ag01_filtrado[ag01_filtrado[ag01_filtrado.columns[1]]<23]
     
     # filtros de potencia
-    ag01_filtrado = ag01_filtrado[ag01_filtrado[ag01_filtrado.columns[4]]>300]
+    ag01_filtrado = ag01_filtrado[ag01_filtrado[ag01_filtrado.columns[4]]>350]
     
     # filtros de estado de sistema
     ag01_filtrado = ag01_filtrado[ag01_filtrado[ag01_filtrado.columns[5]]!=0]
@@ -454,7 +454,11 @@ def visualizacion_de_filtrados():
 def clasificacion_con_regresion_logistica():
     global ag01
     
-    features = [ag01.columns[1],ag01.columns[2],ag01.columns[3],ag01.columns[4],ag01.columns[5]]
+    # features = [ag01.columns[1],ag01.columns[2],ag01.columns[5]]
+    # features = [ag01.columns[1],ag01.columns[2],ag01.columns[3],ag01.columns[4],ag01.columns[5]]
+    features = [ag01.columns[1],ag01.columns[2],ag01.columns[4],ag01.columns[5]]
+    # features = [ag01.columns[1],ag01.columns[2]]
+    # features = [ag01.columns[1],ag01.columns[2],ag01.columns[5]]
     target = ['dentro de curva']
     
     #Seleccionamos todas las columnas
@@ -468,7 +472,7 @@ def clasificacion_con_regresion_logistica():
     from sklearn.model_selection import train_test_split
     
     #Separo los datos de "train" en entrenamiento y prueba para probar los algoritmos
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
     
     #Se escalan todos los datos
     from sklearn.preprocessing import StandardScaler
@@ -479,7 +483,7 @@ def clasificacion_con_regresion_logistica():
     #Defino el algoritmo a utilizar
     from sklearn.linear_model import LogisticRegression
     
-    algoritmo = LogisticRegression()
+    algoritmo = LogisticRegression(random_state=1, solver='liblinear',class_weight='balanced')
     
     #Entreno el modelo
     algoritmo.fit(X_train, y_train)
@@ -560,9 +564,12 @@ def clasificacion_con_knn():
     from sklearn import preprocessing
     global ag01
     
-    random_seed = 7
+    random_seed = 2
     # Lista de features que vamos a considerar 
     features = [ag01.columns[1],ag01.columns[2],ag01.columns[3],ag01.columns[4],ag01.columns[5]]
+    # features = [ag01.columns[1],ag01.columns[2],ag01.columns[4],ag01.columns[5]]
+    # features = [ag01.columns[1],ag01.columns[2]]
+    # features = [ag01.columns[1],ag01.columns[2],ag01.columns[5]]
     # variable a predecir
     target = ['dentro de curva']
     
@@ -574,9 +581,13 @@ def clasificacion_con_knn():
     # print('Vector a predecir: ',y)
     
     # Creacion de las matrices de entrenamiento y testeo. 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, random_state=random_seed)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.30, random_state=random_seed)
     print('Dimensión de la matriz de features para entrenamiento: {}'.format(X_train.shape))
     print('Dimensión de la matriz de features para testeo: {}'.format(X_test.shape))
+    
+    # scaler_train = preprocessing.MinMaxScaler()
+    # X_train_scaled = scaler_train.fit_transform(X_train)
+    # X_test_scaled = scaler_train.transform(X_test)
     
     # Normalizamos en train
     scaler_train = preprocessing.StandardScaler().fit(X_train)
@@ -587,12 +598,31 @@ def clasificacion_con_knn():
     # probar otros números para k
     # probar otras distancias, ej: euclidean, minkowski, manhattan 
     # probar dar mas peso a los vecinos de un orden superior: weights = 'distance'
-    knn = KNeighborsClassifier(n_neighbors=5, metric='euclidean') 
+    knn = KNeighborsClassifier(n_neighbors=2, metric='manhattan',algorithm='auto') 
     knn.fit(X_train_scaled, y_train)
     
     y_pred_train = knn.predict(X_train_scaled)
     accuracy_train =  accuracy_score(y_pred_train, y_train)
     print('El accuracy en el conjunto de train es', accuracy_train)
+    
+    # realizo prediccion con test set
+    prediccion_test = knn.predict(X_test_scaled)
+    accuracy_test =  accuracy_score(prediccion_test, y_test)
+    print('El accuracy en el conjunto de test es', accuracy_train)
+    # realizo comparacion de prediccion y datos de test
+    y_test_arreglado = []
+    for i in range(0,len(y_test)):
+        y_test_arreglado.append(y_test[i][0])
+    
+    # creo vectores para contar y comparar prediccion y test
+    cantidad_positivos_test = []
+    cantidad_negativos_test = []
+    cantidad_positivos_pred = []
+    cantidad_negativos_pred = []
+    
+    # for i in range(0,len(y_test_arreglado)):
+    #     if 
+        
     
     plot_confusion_matrix(knn, X_test_scaled, y_test)  
     plt.show()
@@ -602,8 +632,18 @@ def analisis_de_componentes_principales():
     global ag01
     
     # defino x y
-    x = ag01.iloc[:,1:5].values
-    y = ag01.iloc[:,6].values
+    # features = [ag01.columns[1],ag01.columns[2],ag01.columns[3],ag01.columns[4],ag01.columns[5]]
+    features = [ag01.columns[1],ag01.columns[2]]
+    # features = [ag01.columns[1],ag01.columns[2],ag01.columns[3],ag01.columns[4],ag01.columns[5]]
+    target = ['dentro de curva']
+    
+    #Seleccionamos todas las columnas
+    x = ag01[features]
+    
+    #Defino los datos correspondientes a las etiquetas
+    y = ag01[target]
+    # x = ag01.iloc[:,1:5].values
+    # y = ag01.iloc[:,6].values
     
     # divido datos en conjuntos de datos de train y test
     from sklearn.model_selection import train_test_split
@@ -634,6 +674,13 @@ def analisis_de_componentes_principales():
     
     y_pred = clasificador.predict(x_test)
     
+    #Calculo la precisión del modelo
+    from sklearn.metrics import precision_score
+    
+    precision = precision_score(y_test, y_pred)
+    print('Precisión del modelo:')
+    print(precision)
+    
     # matriz de confusion
     # from sklearn.metrics import confusion_matrix
     from sklearn.metrics import plot_confusion_matrix
@@ -643,6 +690,264 @@ def analisis_de_componentes_principales():
     plot_confusion_matrix(clasificador, x_test, y_pred)
                            
     plt.show()
+
+# clasificacion con arbol de decision
+def clasificacion_arbol_de_decision():
+    global ag01
+    
+   # Lista de features que vamos a considerar 
+    features = [ag01.columns[1],ag01.columns[2],ag01.columns[3],ag01.columns[4],ag01.columns[5]]
+    # variable a predecir
+    target = ['dentro de curva']
+    
+    #Seleccionamos todas las columnas
+    X = ag01[features]
+    
+    #Defino los datos correspondientes a las etiquetas
+    y = ag01[target]
+    
+    ########## IMPLEMENTACIÓN DE ÁRBOLES DE DECISIÓN CLASIFICACIÓN ##########
+    
+    from sklearn.model_selection import train_test_split
+    
+    #Separo los datos de "train" en entrenamiento y prueba para probar los algoritmos
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    
+    #Se escalan todos los datos
+    from sklearn.preprocessing import StandardScaler
+    escalar = StandardScaler()
+    X_train = escalar.fit_transform(X_train)
+    X_test = escalar.transform(X_test)
+    
+    #Defino el algoritmo a utilizar
+    #Arboles de decisión
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.tree import DecisionTreeRegressor
+    # algoritmo = DecisionTreeClassifier(criterion = 'entropy', random_state=1) # 65.8520
+    # algoritmo = DecisionTreeClassifier(criterion = 'entropy', random_state=0) # 66,419
+    # algoritmo = DecisionTreeClassifier(criterion = 'entropy', random_state=2) # 65,9747
+    # algoritmo = DecisionTreeClassifier(criterion = 'gini') # 66,276
+    # algoritmo = DecisionTreeClassifier(criterion = 'entropy')# 66,47
+    # algoritmo = DecisionTreeClassifier(max_depth = 3,random_state = 123) # 62,6104
+    algoritmo = DecisionTreeClassifier(max_depth= 5,criterion= 'entropy',random_state = 123)
+    
+    #Entreno el modelo
+    algoritmo.fit(X_train, y_train)
+    
+    #Realizo una predicción
+    y_pred = algoritmo.predict(X_test)
+    
+    # cross validation
+    from sklearn.model_selection import cross_val_score
+    cross_val_score(algoritmo,X_train,y_train,cv=3,scoring='recall')
+    
+    #Verifico la matriz de Confusión
+    from sklearn.metrics import confusion_matrix
+    matriz = confusion_matrix(y_test, y_pred)
+    print('Matriz de Confusión:')
+    print(matriz)
+    
+    #Calculo la precisión del modelo
+    from sklearn.metrics import precision_score
+    from sklearn.metrics import plot_confusion_matrix
+    # muestro graficamente matriz de confusion 
+    
+    matriz = confusion_matrix(y_test, y_pred)
+    print('Matriz de Confusión:')
+    print(matriz)
+    
+    matriz_DT = plot_confusion_matrix(algoritmo, X_test, y_test,
+                                      cmap='cividis')  
+    plt.show()
+    
+    precision = precision_score(y_test, y_pred)
+    print('Precisión del modelo:')
+    print(precision)
+
+
+# clasificacion por suport vector machine
+def clasificacion_SVM():
+    global ag01
+    
+    # Lista de features que vamos a considerar 
+    features = [ag01.columns[1],ag01.columns[2],ag01.columns[3],ag01.columns[4],ag01.columns[5]]
+    # variable a predecir
+    target = ['dentro de curva']
+    
+    #Seleccionamos todas las columnas
+    X = ag01[features]
+    
+    #Defino los datos correspondientes a las etiquetas
+    y = ag01[target]
+    
+    from sklearn.model_selection import train_test_split
+    
+    #Separo los datos de "train" en entrenamiento y prueba para probar los algoritmos
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    
+    # defino algoritmo svm
+    from sklearn.svm import SVC
+    algoritmo = SVC(kernel='linear')
+    # entro modelo
+    algoritmo.fit(X_train, y_train)
+    
+    # realizo prediccion
+    y_pred = algoritmo.predict(X_test)
+    
+    # verifico matriz de confusion
+    from sklearn.metrics import confusion_matrix
+    matriz = confusion_matrix(y_test, y_pred)
+    print('Matriz de confusion: ')
+    print(matriz)
+    # imprimo matriz
+    from sklearn.metrics import plot_confusion_matrix
+    matriz_LR = plot_confusion_matrix(algoritmo, y_test, y_pred,
+                                      cmap='cividis')  
+    plt.show()
+    
+    # precision del modelo
+    from sklearn.metrics import precision_score
+    precision = precision_score(y_test, y_pred)
+    print('Precision del modelo: ')
+    print(precision)
+
+# algoritmo de clasificaicon gradiente estocastico
+def clasificador_descenso_de_gradiente_estocastico():
+    global ag01
+    
+   # Lista de features que vamos a considerar 
+    features = [ag01.columns[1],ag01.columns[2],ag01.columns[3],ag01.columns[4],ag01.columns[5]]
+    # variable a predecir
+    target = ['dentro de curva']
+    
+    #Seleccionamos todas las columnas
+    X = ag01[features]
+    
+    #Defino los datos correspondientes a las etiquetas
+    y = ag01[target]
+    
+    from sklearn.model_selection import train_test_split
+    
+    #Separo los datos de "train" en entrenamiento y prueba para probar los algoritmos
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    
+    y_train_5 = (y_train == 5)
+    y_test_5 = (y_test == 5)
+    
+    #Se escalan todos los datos
+    from sklearn.preprocessing import StandardScaler
+    escalar = StandardScaler()
+    X_train = escalar.fit_transform(X_train)
+    X_test = escalar.transform(X_test)    
+    
+    # implementacion de algoritmo
+    from sklearn.linear_model import SGDClassifier
+
+    sgd_clf = SGDClassifier(random_state =  42)
+    sgd_clf.fit(X_train,  y_train_5)
+    
+    y_pred=sgd_clf.predict(y_test)
+    
+    #Verifico la matriz de Confusión
+    from sklearn.metrics import confusion_matrix
+    from sklearn.metrics import plot_confusion_matrix
+    # muestro graficamente matriz de confusion 
+    confusion_matrix(y_test, y_pred)
+    
+    matriz = confusion_matrix(y_test, y_pred)
+    print('Matriz de Confusión:')
+    print(matriz)
+    
+    matriz_LR = plot_confusion_matrix(sgd_clf, X_test, y_test,
+                                      cmap='cividis')  
+    plt.show()
+    
+    #cross validatios
+    from sklearn.model_selection import cross_val_score
+    cross_val_score(sgd_clf, X_train, y_train_5, cv=3, scoring="accuracy")
+    
+    #Calculo la precisión del modelo
+    from sklearn.metrics import precision_score
+    
+    precision = precision_score(y_test, y_pred)
+    print('Precisión del modelo:')
+    print(precision)
+    
+    #Calculo la exactitud del modelo
+    from sklearn.metrics import accuracy_score
+    
+    exactitud = accuracy_score(y_test, y_pred)
+    print('Exactitud del modelo:')
+    print(exactitud)
+            
+# algoritmo de clasificacion RANDOM FOREST
+def clasificacion_por_random_forest():
+    global ag01
+    
+    from sklearn.model_selection import train_test_split
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.tree import DecisionTreeClassifier
+    
+    features = [ag01.columns[1],ag01.columns[2],ag01.columns[3],ag01.columns[4],ag01.columns[5]]
+    target = ['dentro de curva']
+    
+    #Seleccionamos todas las columnas
+    X = ag01[features]
+    
+    #Defino los datos correspondientes a las etiquetas
+    y = ag01[target]
+    
+    #Separo los datos de "train" en entrenamiento y prueba para probar los algoritmos
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    
+    #Se escalan todos los datos
+    from sklearn.preprocessing import StandardScaler
+    escalar = StandardScaler()
+    X_train = escalar.fit_transform(X_train)
+    X_test = escalar.transform(X_test)
+    
+    # #Creamos un arbol de decisión sencillo y lo fiteamos
+    tree = DecisionTreeClassifier(random_state=11, max_depth=5)
+    tree.fit(X_train, y_train)
+    
+    y_test_pred = tree.predict(X_test) #Prediccion en Test
+    
+    from sklearn.metrics import accuracy_score
+
+    #Calculo el accuracy en Test
+    test_accuracy = accuracy_score(y_test, y_test_pred)
+    
+    print('% de aciertos sobre el set de evaluación 1:',test_accuracy)
+    
+    #Creamos un random forest!
+    model = RandomForestClassifier(random_state=11, n_estimators=200,
+                                   class_weight="balanced", max_features="log2")
+    model.fit(X_train, y_train)
+    
+    y_test_pred = model.predict(X_test) #Prediccion en Test
+    
+    #Verifico la matriz de Confusión
+    from sklearn.metrics import confusion_matrix
+    from sklearn.metrics import plot_confusion_matrix
+    # muestro graficamente matriz de confusion 
+    confusion_matrix(y_test, y_test_pred)
+    
+    matriz = confusion_matrix(y_test, y_test_pred)
+    print('Matriz de Confusión:')
+    print(matriz)
+    
+    matriz_LR = plot_confusion_matrix(model, X_test, y_test_pred,
+                                      cmap='cividis')  
+    plt.show()
+    
+    
+    #Calculo la exactitud del modelo
+    from sklearn.metrics import accuracy_score
+    
+    #Calculo el accuracy en Test
+    test_accuracy = accuracy_score(y_test, y_test_pred)
+    
+    print('% de aciertos sobre el set de evaluación del random forest:',test_accuracy)
 
 # funcion principal
 def funcion_principal():
