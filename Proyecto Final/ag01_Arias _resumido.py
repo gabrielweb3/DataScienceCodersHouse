@@ -13,6 +13,7 @@ from sklearn.metrics import precision_score
 
 # definicion de dataframe principal
 ag01 = pd.DataFrame()
+ag01_filtrado = pd.DataFrame()
 
 # carga de datos
 def carga_de_datos():
@@ -182,7 +183,7 @@ def analisis_multivariado():
     
     multivariado_potencia_velocidad()
     
-    analisis_de_componentes_principales()
+    # analisis_de_componentes_principales()
 
 ##############################################################################
 ###################### DATA CLEANING #########################################
@@ -466,6 +467,7 @@ def clasificacion_por_random_forest():
     global ag01
     
     from sklearn.model_selection import train_test_split
+    
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.tree import DecisionTreeClassifier
     
@@ -478,8 +480,53 @@ def clasificacion_por_random_forest():
     #Defino los datos correspondientes a las etiquetas
     y = ag01[target]
     
-    #Separo los datos de "train" en entrenamiento y prueba para probar los algoritmos
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+    
+    # defino modelo a usar
+    # model = RandomForestClassifier(random_state=7, n_estimators=150, criterion="entropy",
+    #                               class_weight="balanced", max_features="sqrt", n_jobs=6) # 99997, 614
+    
+    # from sklearn.model_selection import GridSearchCV
+    # from sklearn.model_selection import RandomizedSearchCV
+    
+    # #Number of trees in random forest
+    # n_estimators = [int(x) for x in np.linspace(start = 200, stop = 2000, num = 10)]
+    # # Number of features to consider at every split
+    # max_features = ['auto', 'sqrt']
+    # # Maximum number of levels in tree
+    # max_depth = [int(x) for x in np.linspace(10, 110, num = 11)]
+    # max_depth.append(None)
+    # # Minimum number of samples required to split a node
+    # min_samples_split = [2, 5, 10]
+    # # Minimum number of samples required at each leaf node
+    # min_samples_leaf = [1, 2, 4]
+    # # Method of selecting samples for training each tree
+    # bootstrap = [True, False]
+    # # Create the random grid
+    # random_grid = {'n_estimators': n_estimators,
+    #                'max_features': max_features,
+    #                'max_depth': max_depth,
+    #                'min_samples_split': min_samples_split,
+    #                'min_samples_leaf': min_samples_leaf,
+    #                'bootstrap': bootstrap}
+    
+    # model = RandomForestClassifier(random_state=7)
+    
+    # rf_random = RandomizedSearchCV(estimator = model, 
+    #                                param_distributions = random_grid, 
+    #                                n_iter = 100, cv = 3, verbose=2, 
+    #                                random_state=42, n_jobs = -1)
+     
+    # #Utilizamos la grilla definida anteriormente...
+    # # model = GridSearchCV(model, param_grid=param_grid, cv=5)
+    
+    # # Fit the random search model
+    # rf_random.fit(X, y)
+    
+    # print(rf_random.best_params_)
+    # https://towardsdatascience.com/hyperparameter-tuning-the-random-forest-in-python-using-scikit-learn-28d2aa77dd74
+    # Separo los datos de "train" en entrenamiento y prueba para probar los algoritmos
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33,
+                                                        shuffle=True)
     
     #Se escalan todos los datos
     from sklearn.preprocessing import StandardScaler
@@ -487,21 +534,24 @@ def clasificacion_por_random_forest():
     X_train = escalar.fit_transform(X_train)
     X_test = escalar.transform(X_test)
     
-    # #Creamos un arbol de decisión sencillo y lo fiteamos
-    tree = DecisionTreeClassifier(max_depth=5,criterion= 'gini',random_state = 123)
-    tree.fit(X_train, y_train)
+    # # #Creamos un arbol de decisión sencillo y lo fiteamos
+    # tree = DecisionTreeClassifier(max_depth=5,criterion= 'gini',random_state = 123)
+    # tree.fit(X_train, y_train)
     
-    y_test_pred = tree.predict(X_test) #Prediccion en Test
+    # y_test_pred = tree.predict(X_test) #Prediccion en Test
     
     from sklearn.metrics import accuracy_score
 
-    #Calculo el accuracy en Test
-    test_accuracy = accuracy_score(y_test, y_test_pred)
+    # #Calculo el accuracy en Test
+    # test_accuracy = accuracy_score(y_test, y_test_pred)
     
-    print('% de aciertos sobre el set de evaluación 1:',test_accuracy)
+    # print('% de aciertos sobre el set de evaluación 1:',test_accuracy)
     
     model = RandomForestClassifier(random_state=7, n_estimators=150, criterion="entropy",
                                     class_weight="balanced", max_features="sqrt", n_jobs=6) # 99997, 614
+    
+    # hiperparametros con grid search
+    # defino rango para cada parametro
     
     model.fit(X_train, y_train)
     
@@ -547,65 +597,128 @@ def clasificacion_por_random_forest():
     test_accuracy = accuracy_score(y_test, y_test_pred)
     
     print('% de aciertos sobre el set de evaluación del random forest:',test_accuracy)
+    
+    
+# algoritmos de clasificacion con adaboosting
+def clasificacion_con_adaBoosting():
+    global ag01, ag01_filtrado
+    
+    features = [ag01.columns[1],ag01.columns[2],ag01.columns[3],ag01.columns[4],ag01.columns[5]]
+    target = ['dentro de curva']
+    
+    #Seleccionamos todas las columnas
+    X = ag01[features]
+    
+    #Defino los datos correspondientes a las etiquetas
+    y = ag01[target]
+    
+    
+    #Separo los datos de "train" en entrenamiento y prueba para probar los algoritmos
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    
+    #Se escalan todos los datos
+    from sklearn.preprocessing import StandardScaler
+    escalar = StandardScaler()
+    X_train = escalar.fit_transform(X_train)
+    X_test = escalar.fit_transform(X_test)
+    
+    from sklearn.ensemble import AdaBoostClassifier
+    from sklearn import metrics
+    
+    # ###Completar
+    # ada = AdaBoostClassifier(n_estimators=50,learning_rate=1)
+    # model = ada.fit(X_train, y_train)
+    
+    y_train_pred = model.predict(X_train) 
+    y_test_pred = model.predict(X_test)
+    
+    #Calculo el accuracy en Train
+    from sklearn.metrics import accuracy_score
+    train_accuracy = accuracy_score(y_train, y_train_pred)
+    
+    #Calculo el accuracy en Test
+    test_accuracy = accuracy_score(y_test, y_test_pred)
+    
+    print('% de aciertos sobre el set de entrenamiento:', train_accuracy)
+    print('% de aciertos sobre el set de evaluación:',test_accuracy)
+        
 
-
+##############################################################################
+######################### ALGORITMO PREDICTIVO ###############################
+##############################################################################
 # algoritmo de prediccion de curva de potencia
 # redes neuronales
 def prediccion_de_potencia():
+    global ag01, ag01_filtrado
+    
+    
+    features = [ag01_filtrado.columns[1],ag01_filtrado.columns[2],ag01_filtrado.columns[3]]
+    target = [ag01_filtrado.columns[4]]
+    
+    #Seleccionamos todas las columnas
+    X = ag01_filtrado[features]
+    
+    #Defino los datos correspondientes a las etiquetas
+    y = ag01_filtrado[target]
+    
     # librerias para visualizacion
     import plotly.express as px
     from plotly.offline import plot
     
-    global ag01_filtrado
+    datos_entrada = px.scatter(x=X[X.columns[0]],y=y[y.columns[0]])
+    plot(datos_entrada,filename='datos entrada')
     
-    features = [ag01_filtrado.columns[1],
-                ag01_filtrado.columns[2],
-                ag01_filtrado.columns[3]]
     
-    target = [ag01_filtrado.columns[4]]
+    #Separo los datos de "train" en entrenamiento y prueba para probar los algoritmos
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
     
-    X = ag01_filtrado[features]
-    y = ag01_filtrado[target]
-
-    # divido datos
-    from sklearn.model_selection import train_test_split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.30, random_state=1)
-
-    # curva de potencia con los datos de entrada
-    datos_para_curva = []
-    for i in range(0,len(y_test)):
-        datos_para_curva.append(y_test.values[i][0])
-    scatter = px.scatter(x=X_test[ag01_filtrado.columns[1]],
-                         y=datos_para_curva)
-    scatter.update_layout(title_text="Curva de Potencia Datos de Entrada")
-    plot(scatter,filename='Curva de Potencian Datos de Entrada.html')
-    scatter.show()
-
-    # escalo datos
-    from sklearn import preprocessing
-    scaler_train = preprocessing.MinMaxScaler()
-    X_train = scaler_train.fit_transform(X_train)
-    X_test = scaler_train.transform(X_test)
-
-    # importo libreria de ml
+    # separo una variable de velocidad para graficar en el final
+    velocidad_para_graficar = X_test[X_test.columns[0]].copy()
+    
+    #Se escalan todos los datos
+    from sklearn.preprocessing import StandardScaler
+    escalar = StandardScaler()
+    X_train = escalar.fit_transform(X_train)
+    X_test = escalar.fit_transform(X_test)
+    
     import tensorflow as tf
     
-    # creo capaz ocultasy de salida
-    oculta1 = tf.keras.layers.Dense(units=3, input_shape=[3])
-    oculta2 = tf.keras.layers.Dense(units=3)
-    salida = tf.keras.layers.Dense(units=1)
+    # definicion de modelo
+    modelo = tf.keras.Sequential()
+    
+    # capas
+    # 1 
+    modelo.add(tf.keras.layers.Dense(units=10, input_shape=[3], activation='softplus'))
+    # 2
+    # modelo.add(tf.keras.layers.Dense(100, activation='exponential'))
+    # 3
+    modelo.add(tf.keras.layers.Dense(units=10, activation='tanh'))
+    # salida
+    modelo.add(tf.keras.layers.Dense(units=1))
     
     # creo modelo de rn
-    modelo = tf.keras.Sequential([oculta1, oculta2, salida])
+    # modelo = tf.keras.Sequential([oculta1, oculta2, salida])
+    
+    # lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+    #     initial_learning_rate=1e-2,
+    #     decay_steps=10000,
+    #     decay_rate=0.9)
+    # optimizador = tf.keras.optimizers.SGD(learning_rate=lr_schedule)
+    
+    # parametros de modelo
+    optimizador = tf.keras.optimizers.Adam(0.01)
+    funcion_de_perdidas = 'mean_squared_error'
     
     # compilacion de modelo
     modelo.compile(
-        optimizer=tf.keras.optimizers.Adam(0.1),
-        loss='mean_squared_error')
+    optimizer=optimizador,
+    loss=funcion_de_perdidas,
+    metrics=[tf.keras.metrics.Accuracy()])
     
-    # entreno modelo
+    
+    # entrenamiento y evaluacion del modelo
     print("Comenzando entrenamiento...")
-    historial = modelo.fit(X_train, y_train, epochs=100, verbose=False)
+    historial = modelo.fit(X_train, y_train, epochs=50, verbose=False)
     print("Modelo entrenado!")
     
     # visualizacion de evolucion de la funcion de perdida en funcion del epoch
@@ -614,20 +727,121 @@ def prediccion_de_potencia():
     plt.ylabel("Magnitud de pérdida")
     plt.plot(historial.history["loss"])
     
-    # prediccion
+    
+    # prediccion y metricas del modelo
     prediccion = modelo.predict(X_test)
     
-    # preparo datos para graficar
-    predecido = []; real = []
-    for i in range(0,len(prediccion)):
+    # accuracy
+    precision_modelo = tf.keras.metrics.Accuracy(name='accuracy',dtype=None)
+    precision_modelo.update_state(y_test, prediccion) 
+    print('Accuracy del modelo:',precision_modelo.result().numpy())
+    
+
+    
+    # preparacion datos para regresion
+    real = []; predecido = [] 
+    for i in range(0,len(y_test)):
+    # real.append(y_test.values[i][0])
         predecido.append(prediccion[i][0])
         real.append(y_test.values[i][0])
     
-    # regresion lineal
-    scatter = px.scatter(x=predecido,y=real)
-    scatter.update_layout(title_text="Regresion Realidad vs Prediccion")
-    plot(scatter,filename='Regresion Realidad vs Prediccion.html')
+    
+    # prediccion_potencia = px.scatter(x=velocidad_para_graficar,
+    #                              y=predecido)
+    # prediccion_potencia.update_layout(title_text='prediccion vs realidad')
+    # plot(prediccion_potencia,filename='prediccion vs realidad')
+    
+    # realidad_potencia = px.scatter(x=velocidad_para_graficar,
+    #                              y=real)
+    # realidad_potencia.update_layout(title_text='prediccion vs realidad')
+    # plot(realidad_potencia,filename='realidad')
+    
+    # realidad vs resultados
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+    
+    trace1 = go.Scatter(
+    x=velocidad_para_graficar,
+    y=real,
+    name='Prediccion',
+    mode = 'markers',
+    opacity=0.4           
+    )
+    trace2 = go.Scatter(
+        x=velocidad_para_graficar,
+        y=predecido,
+        name='Realidad',
+        mode = 'markers',
+        opacity=0.7
+    )
 
+    
+    # fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig = make_subplots()
+    fig.add_trace(trace1)
+    # fig.add_trace(trace2, secondary_y=True)
+    fig.add_trace(trace2)
+    
+    fig.update_layout(xaxis=dict(tickangle=90))
+    fig.show()
+    plot(fig)
+    
+    # metricas para evaluar resultados
+    # se selecciona la raiz cuadrada del error cuadratico medio, ya que se pude comparar directamente con los datos utilizados
+    # realizar la prediccion
+    from sklearn.metrics import mean_squared_error
+    RMSE = mean_squared_error(y_test, prediccion)
+    print(f'Raiz del error cuadratico medio:{RMSE}KW')
+    
+    # comparo el rmse con los datos y obtengo el error en porcentaje
+    comparacion_error = (RMSE)/np.mean(y_test)
+    print(f'Error prediccion vs real:{comparacion_error} %')
+    
+    # analisis estadistico de resultados
+    # separo datos que necesito para comparar curva con datos reales
+    datos_de_comparacion = ag01_filtrado[len(ag01_filtrado[ag01_filtrado.columns[0]])-len(y_test)-1:-1]
+    fecha_comparacion = datos_de_comparacion['fecha']
+    potencia_de_comparacion = datos_de_comparacion[datos_de_comparacion.columns[4]]
+    # realizo comparacion directa entre prediccion y realidad en fecha de interes    
+    comparacion_prediccion_realidad = potencia_de_comparacion - predecido
+
+    # grafico el error en funcion de la fecha
+    diferencia_en_el_tiempo = px.line(x=fecha_comparacion,y=comparacion_prediccion_realidad)
+    plot(diferencia_en_el_tiempo)
+
+def clasificador_ADA_booster():
+    global ag01, ag01_filtrado
+    from sklearn.ensemble import AdaBoostClassifier
+    # from sklearn.datasets import make_classification
+    
+    from sklearn.model_selection import train_test_split
+    
+    features = [ag01.columns[1],ag01.columns[2],ag01.columns[3],ag01.columns[4],ag01.columns[5]]
+    target = ['dentro de curva']
+    
+    #Seleccionamos todas las columnas
+    X = ag01[features]
+    
+    #Defino los datos correspondientes a las etiquetas
+    y = ag01[target]
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33,
+                                                        shuffle=True)
+    
+    #Se escalan todos los datos
+    from sklearn.preprocessing import StandardScaler
+    escalar = StandardScaler()
+    X_train = escalar.fit_transform(X_train)
+    X_test = escalar.transform(X_test)
+    
+    from sklearn.metrics import accuracy_score
+    
+    
+    clf = AdaBoostClassifier(n_estimators=100, random_state=0)
+    clf.fit(X_train, y_train)
+    AdaBoostClassifier(n_estimators=100, random_state=0)
+    prediccion = clf.predict([y_test])
+    clf.score(X_test, y_test)
 
 # funcion principal
 def funcion_principal():
@@ -639,110 +853,111 @@ def funcion_principal():
     filtrado_de_datos()
     visualizacion_de_filtrados()
     clasificacion_por_random_forest()
+    prediccion_de_potencia()
 
 funcion_principal()
 
 
 
-# modelo ml para prediccion de velocidad
-# defino features y target
-# features = ['CH1Avg','CH1SD','CH1Max','CH1Min']
-# features = ['CH1Avg','CH1SD','CH1Max','CH1Min']
-features = ['CH1Avg','CH1SD','CH1Max','CH1Min','CH3Avg','CH3SD','CH3Max','CH3Min']
-target = ['CH2Avg']
-X = datos[features]
-y = datos[target]
+# # modelo ml para prediccion de velocidad
+# # defino features y target
+# # features = ['CH1Avg','CH1SD','CH1Max','CH1Min']
+# # features = ['CH1Avg','CH1SD','CH1Max','CH1Min']
+# features = ['CH1Avg','CH1SD','CH1Max','CH1Min','CH3Avg','CH3SD','CH3Max','CH3Min']
+# target = ['CH2Avg']
+# X = datos[features]
+# y = datos[target]
 
-# divido datos
-from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.30, random_state=1)
+# # divido datos
+# from sklearn.model_selection import train_test_split
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.30, random_state=1)
 
 
-# regresion lineal con datos de test para comparar con regresion predecida
-datos_para_regresion = []
-for i in range(0,len(y_test)):
-    datos_para_regresion.append(y_test.values[i][0])
-scatter = px.scatter(x=datos_para_regresion,y=X_test['CH1Avg'], trendline="ols")
-scatter.update_layout(title_text="Regresion Datos de Entrada")
-plot(scatter,filename='Regresion Datos de Entrada.html')
-'''
-Resultados regresion
-y = 0.994807.X-0.078781
-R2 = 0.991647
-'''
-# distribucion de los datos de entrada
-import plotly.figure_factory as ff
-hist_data = [datos_para_regresion,X_test['CH1Avg']]
-group_labels = ['Velocidad_1','Velocidad_2']
-dist_in = ff.create_distplot(hist_data, group_labels, bin_size=.2)
-dist_in.show()
+# # regresion lineal con datos de test para comparar con regresion predecida
+# datos_para_regresion = []
+# for i in range(0,len(y_test)):
+#     datos_para_regresion.append(y_test.values[i][0])
+# scatter = px.scatter(x=datos_para_regresion,y=X_test['CH1Avg'], trendline="ols")
+# scatter.update_layout(title_text="Regresion Datos de Entrada")
+# plot(scatter,filename='Regresion Datos de Entrada.html')
+# '''
+# Resultados regresion
+# y = 0.994807.X-0.078781
+# R2 = 0.991647
+# '''
+# # distribucion de los datos de entrada
+# import plotly.figure_factory as ff
+# hist_data = [datos_para_regresion,X_test['CH1Avg']]
+# group_labels = ['Velocidad_1','Velocidad_2']
+# dist_in = ff.create_distplot(hist_data, group_labels, bin_size=.2)
+# dist_in.show()
 
-# escalo datos
-from sklearn import preprocessing
-scaler_train = preprocessing.MinMaxScaler()
-X_train = scaler_train.fit_transform(X_train)
-X_test = scaler_train.transform(X_test)
+# # escalo datos
+# from sklearn import preprocessing
+# scaler_train = preprocessing.MinMaxScaler()
+# X_train = scaler_train.fit_transform(X_train)
+# X_test = scaler_train.transform(X_test)
 
-# importo libreria de ml
-import tensorflow as tf
+# # importo libreria de ml
+# import tensorflow as tf
 
-# creo capaz ocultasy de salida
-oculta1 = tf.keras.layers.Dense(units=3, input_shape=[8])
-oculta2 = tf.keras.layers.Dense(units=3)
-salida = tf.keras.layers.Dense(units=1)
+# # creo capaz ocultasy de salida
+# oculta1 = tf.keras.layers.Dense(units=3, input_shape=[8])
+# oculta2 = tf.keras.layers.Dense(units=3)
+# salida = tf.keras.layers.Dense(units=1)
 
-# creo modelo de rn
-modelo = tf.keras.Sequential([oculta1, oculta2, salida])
+# # creo modelo de rn
+# modelo = tf.keras.Sequential([oculta1, oculta2, salida])
 
-# compilacion de modelo
-modelo.compile(
-    optimizer=tf.keras.optimizers.Adam(0.1),
-    loss='mean_squared_error')
+# # compilacion de modelo
+# modelo.compile(
+#     optimizer=tf.keras.optimizers.Adam(0.1),
+#     loss='mean_squared_error')
 
-# entreno modelo
-print("Comenzando entrenamiento...")
-historial = modelo.fit(X_train, y_train, epochs=100, verbose=False)
-print("Modelo entrenado!")
+# # entreno modelo
+# print("Comenzando entrenamiento...")
+# historial = modelo.fit(X_train, y_train, epochs=100, verbose=False)
+# print("Modelo entrenado!")
 
-# visualizacion de evolucion de la funcion de perdida en funcion del epoch
-import matplotlib.pyplot as plt
-plt.xlabel("# Epoca")
-plt.ylabel("Magnitud de pérdida")
-plt.plot(historial.history["loss"])
+# # visualizacion de evolucion de la funcion de perdida en funcion del epoch
+# import matplotlib.pyplot as plt
+# plt.xlabel("# Epoca")
+# plt.ylabel("Magnitud de pérdida")
+# plt.plot(historial.history["loss"])
 
-# prediccion
-prediccion = modelo.predict(X_test)
+# # prediccion
+# prediccion = modelo.predict(X_test)
 
-# comparacion perdiccion realidad
+# # comparacion perdiccion realidad
 
-# preparo datos para graficar
-predecido = []; real = []
-for i in range(0,len(prediccion)):
-    predecido.append(prediccion[i][0])
-    real.append(y_test.values[i][0])
+# # preparo datos para graficar
+# predecido = []; real = []
+# for i in range(0,len(prediccion)):
+#     predecido.append(prediccion[i][0])
+#     real.append(y_test.values[i][0])
 
-# regresion lineal
-scatter = px.scatter(x=real,y=predecido, trendline="ols")
-scatter.update_layout(title_text="Regresion Realidad vs Prediccion")
-plot(scatter,filename='Regresion Realidad vs Prediccion.html')
-'''
-Resultados regresion
-y = 1.02469.X-0.236943
-R2 = 0.992132
-'''
+# # regresion lineal
+# scatter = px.scatter(x=real,y=predecido, trendline="ols")
+# scatter.update_layout(title_text="Regresion Realidad vs Prediccion")
+# plot(scatter,filename='Regresion Realidad vs Prediccion.html')
+# '''
+# Resultados regresion
+# y = 1.02469.X-0.236943
+# R2 = 0.992132
+# '''
 
-# no tiene sentido hacer grafica lineal porque el set de test esta tomado de manera random
-# por lo que no tiene una continuidad temporal
-# # line plot
-# line = px.line(x=datos['Fecha_hora'][len(datos['Fecha_hora'])-len(real)-1:-1],y=[real,predecido])
-# line.update_layout(title_text="Evolucion temporal Realidad vs Prediccion")
-# plot(line,filename="Evolucion temporal Realidad vs Prediccion.html")
+# # no tiene sentido hacer grafica lineal porque el set de test esta tomado de manera random
+# # por lo que no tiene una continuidad temporal
+# # # line plot
+# # line = px.line(x=datos['Fecha_hora'][len(datos['Fecha_hora'])-len(real)-1:-1],y=[real,predecido])
+# # line.update_layout(title_text="Evolucion temporal Realidad vs Prediccion")
+# # plot(line,filename="Evolucion temporal Realidad vs Prediccion.html")
 
-# promedios de real y predecido
-print(f'Promedio de velocidad real:{np.mean(real)}')
-print(f'Promedio de velocidad predecida:{np.mean(predecido)}')
+# # promedios de real y predecido
+# print(f'Promedio de velocidad real:{np.mean(real)}')
+# print(f'Promedio de velocidad predecida:{np.mean(predecido)}')
 
-# calculo de ECM
-ECM_prediccion = mean_squared_error(y_test, prediccion)
-print('Raiz del Error cuadratico medio:')
-print(np.sqrt(ECM_prediccion))
+# # calculo de ECM
+# ECM_prediccion = mean_squared_error(y_test, prediccion)
+# print('Raiz del Error cuadratico medio:')
+# print(np.sqrt(ECM_prediccion))
